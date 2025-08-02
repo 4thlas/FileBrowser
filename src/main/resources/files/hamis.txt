@@ -1,0 +1,10 @@
+Hämis is a small, but aggressive three-legged critter that group together and can deal a moderate amount of
+melee damage.
+
+Hämikset are often found in groups of up to 8 at once.
+Their numbers make them annoying to deal with, as their corpses and gold nugget drops will block your shots when they are packed tightly together.
+Hämikset will sometimes consume corpses. They also spawn from nests, usually located in the Fungal Caverns. Like other enemies spawned from nests, they drop no gold.
+They are also spawned from breakable pots in the Pyramid and Temple of the Art.
+Since they are often found in packs, using explosive barrels and boxes to kill them is a good way to get money at the beginning of your run, as trick kills will yield double gold.
+Due to their low health, fire from dropped lanterns is also effective for this, as they will jump in panic while ignoring you.
+Charmed Hämis are summoned from Chilly eggs when broken.

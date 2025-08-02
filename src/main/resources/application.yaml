@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: FileBrowser
+  datasource:
+    url: jdbc:mysql://localhost:3306/file_browser?createDatabaseIfNotExist=true
+    username: root
+    password: 1234
