@@ -2,9 +2,7 @@ package com.athlas.filebrowser.services;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -20,12 +18,14 @@ public class WordService
 {
     private FileService fileService;
 
-    private static final String PUNCTUATION_REGEX = "[ ?!;(){}\\[\\]<>\\@#$%&*\\\\\\^'\"]";
+    //private static final String PUNCTUATION_REGEX = "[~`!@#\\\\$%\\\\^&\\\\*\\\\(\\\\)-_=\\\\+\\\\[\\\\]\\\\{\\\\};:'\\\",\\\\.<>/\\\\?\\\\\\\\\\\\|]";
+    private static final String PUNCTUATION_REGEX = "[~!@#$%^&*()\\-_=+\\[\\]{};:'\",.<>/?\\\\|]";
+
 
     // Returns all words from folder
     public HashSet<String> getAllWords(String folderPath) throws FileNotFoundException
     {
-        File[] folderContent = fileService.getFolderFiles("files");
+        File[] folderContent = fileService.getFolderFiles(folderPath);
 
         HashSet<String> words = new HashSet<>();
 
@@ -53,32 +53,28 @@ public class WordService
             if (!sanitizedWord.isBlank())
             {
                 // Separate connected words
-                String[] separated = sanitizedWord.split("[\\\\/+=\\-_.,:]");
+                String[] separated = sanitizedWord.split("[_\\.,:\\+=/\\\\-]");
 
                 // Add to a word set
                 for (String part : separated)
                 {
                     if (!part.isBlank())
+                    {
                         words.add(part);
+                    }
                 }
             }
         }
         return words;
     }
 
+    // Removes leading and ending punctuation marks
     public String sanitizeWord(String word)
     {
-        StringBuilder constructedWord = new StringBuilder();
-        for (int i = 0; i < word.length(); i++)
-        {
-            // Allow for chars only inside words
-            if (!String.valueOf(word.charAt(i)).matches(PUNCTUATION_REGEX)
-                    || (i > 0 && i < word.length() - 1 &&
-                    !String.valueOf(word.charAt(i - 1)).matches(PUNCTUATION_REGEX) && !String.valueOf(word.charAt(i + 1)).matches(PUNCTUATION_REGEX)))
-            {
-                constructedWord.append(word.charAt(i));
-            }
-        }
-        return constructedWord.toString().toLowerCase();
+        return word
+                .replaceAll("[\\p{Cf}]", "") // Remove invisible characters
+                .replaceAll("^[\\p{Punct}\\p{IsPunctuation}…]+|[\\p{Punct}\\p{IsPunctuation}…]+$", "")
+                .toLowerCase();
+
     }
 }

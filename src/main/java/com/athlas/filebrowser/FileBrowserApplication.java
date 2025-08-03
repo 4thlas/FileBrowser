@@ -20,10 +20,15 @@ public class FileBrowserApplication
         var fileService = context.getBean(FileService.class);
         var wordService = context.getBean(WordService.class);
 
+        //System.out.println("["+wordService.sanitizeWord(" --- ")+"]");
+
         // TEST
         try
         {
+            //File file = fileService.openFile("hamis.txt");
+            //HashSet<String> words = wordService.getFileWords(file);
             HashSet<String> words = wordService.getAllWords("files");
+
             for (String word : words)
             {
                 System.out.println(word);
@@ -33,8 +38,5 @@ public class FileBrowserApplication
         {
             System.out.println("File not found.");
         }
-
-
-
     }
 }
