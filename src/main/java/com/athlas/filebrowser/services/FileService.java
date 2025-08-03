@@ -1,18 +1,13 @@
 package com.athlas.filebrowser.services;
 
-import com.athlas.filebrowser.exception.InvalidFileTypeException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
@@ -20,6 +15,8 @@ import java.util.Set;
 @Getter
 public class FileService
 {
+    private static final String PUNCTUATION_REGEX = "[ ?!;(){}\\[\\]<>\\@#$%&*\\\\\\^'\"]";
+
     // Return .txt files only
     public File[] getFolderFiles(String path)
     {
@@ -82,13 +79,50 @@ public class FileService
         HashSet<String> words = new HashSet<>();
 
         Scanner scanner = new Scanner(file);
-        scanner.useDelimiter(" +"); // Delimiter to read word by word
+        scanner.useDelimiter("\\s+"); // Delimiter to read word by word
 
         while (scanner.hasNext())
         {
-            words.add(scanner.next());
+            String sanitizedWord = sanitizeWord(scanner.next());
+            if (!sanitizedWord.isBlank())
+            {
+                // Separate connected words
+                String[] separated = sanitizedWord.split("[\\\\/+=\\-_.,:]");
+
+                // Add to a word set
+                for (String part : separated)
+                {
+                    if (!part.isBlank())
+                        words.add(part);
+                }
+            }
         }
 
         return words;
+    }
+
+    public String sanitizeWord(String word)
+    {
+        StringBuilder constructedWord = new StringBuilder();
+        for (int i = 0; i < word.length(); i++)
+        {
+            // Check if char is not on regex
+            if (!String.valueOf(word.charAt(i)).matches(PUNCTUATION_REGEX))
+            {
+                constructedWord.append(word.charAt(i));
+            }
+            else
+            {
+                // Allow for char if it's in the middle of string
+                if (i > 0 && i < word.length() - 1)
+                {
+                    if (!String.valueOf(word.charAt(i - 1)).matches(PUNCTUATION_REGEX) && !String.valueOf(word.charAt(i + 1)).matches(PUNCTUATION_REGEX))
+                    {
+                        constructedWord.append(word.charAt(i));
+                    }
+                }
+            }
+        }
+        return constructedWord.toString();
     }
 }

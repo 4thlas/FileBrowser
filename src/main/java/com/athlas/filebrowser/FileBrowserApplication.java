@@ -21,7 +21,7 @@ public class FileBrowserApplication
         // TEST
         try
         {
-            File file = fileService.openFile("hamis.txt");
+            File file = fileService.openFile("test.txt");
             HashSet<String> words = fileService.getWords(file);
             for (String word : words)
             {
