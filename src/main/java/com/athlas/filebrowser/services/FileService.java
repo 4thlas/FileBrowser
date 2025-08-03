@@ -1,8 +1,8 @@
 package com.athlas.filebrowser.services;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -10,12 +10,12 @@ import java.io.FileNotFoundException;
 import java.util.*;
 
 @Service
-@AllArgsConstructor
 @Setter
 @Getter
 public class FileService
 {
-    private static final String PUNCTUATION_REGEX = "[ ?!;(){}\\[\\]<>\\@#$%&*\\\\\\^'\"]";
+    @Value("${app.files.location}")
+    private String FILE_FOLDER_PATH;
 
     // Return .txt files only
     public File[] getFolderFiles(String path)
@@ -42,7 +42,7 @@ public class FileService
 
     public File openFile(String filename) throws FileNotFoundException
     {
-        return new File("files/" + filename);
+        return new File(FILE_FOLDER_PATH + filename);
     }
 
     public String getFileExtension(File file)
@@ -72,57 +72,5 @@ public class FileService
             System.out.println(scanner.nextLine());
         }
     }
-
-    // List all words that appear in the file
-    public HashSet<String> getWords(File file) throws FileNotFoundException
-    {
-        HashSet<String> words = new HashSet<>();
-
-        Scanner scanner = new Scanner(file);
-        scanner.useDelimiter("\\s+"); // Delimiter to read word by word
-
-        while (scanner.hasNext())
-        {
-            String sanitizedWord = sanitizeWord(scanner.next());
-            if (!sanitizedWord.isBlank())
-            {
-                // Separate connected words
-                String[] separated = sanitizedWord.split("[\\\\/+=\\-_.,:]");
-
-                // Add to a word set
-                for (String part : separated)
-                {
-                    if (!part.isBlank())
-                        words.add(part);
-                }
-            }
-        }
-
-        return words;
-    }
-
-    public String sanitizeWord(String word)
-    {
-        StringBuilder constructedWord = new StringBuilder();
-        for (int i = 0; i < word.length(); i++)
-        {
-            // Check if char is not on regex
-            if (!String.valueOf(word.charAt(i)).matches(PUNCTUATION_REGEX))
-            {
-                constructedWord.append(word.charAt(i));
-            }
-            else
-            {
-                // Allow for char if it's in the middle of string
-                if (i > 0 && i < word.length() - 1)
-                {
-                    if (!String.valueOf(word.charAt(i - 1)).matches(PUNCTUATION_REGEX) && !String.valueOf(word.charAt(i + 1)).matches(PUNCTUATION_REGEX))
-                    {
-                        constructedWord.append(word.charAt(i));
-                    }
-                }
-            }
-        }
-        return constructedWord.toString();
-    }
 }
+

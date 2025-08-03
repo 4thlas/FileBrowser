@@ -1,6 +1,7 @@
 package com.athlas.filebrowser;
 
 import com.athlas.filebrowser.services.FileService;
+import com.athlas.filebrowser.services.WordService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -17,12 +18,12 @@ public class FileBrowserApplication
         ApplicationContext context = SpringApplication.run(FileBrowserApplication.class, args);
 
         var fileService = context.getBean(FileService.class);
+        var wordService = context.getBean(WordService.class);
 
         // TEST
         try
         {
-            File file = fileService.openFile("test.txt");
-            HashSet<String> words = fileService.getWords(file);
+            HashSet<String> words = wordService.getAllWords("files");
             for (String word : words)
             {
                 System.out.println(word);
