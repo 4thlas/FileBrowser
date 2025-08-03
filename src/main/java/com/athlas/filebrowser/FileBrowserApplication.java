@@ -5,7 +5,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashSet;
 
 @SpringBootApplication
 public class FileBrowserApplication
@@ -19,9 +21,9 @@ public class FileBrowserApplication
         // TEST
         try
         {
-            fileService.openFile("minos.txt");
-
-            for(String word : fileService.getWords())
+            File file = fileService.openFile("hamis.txt");
+            HashSet<String> words = fileService.getWords(file);
+            for (String word : words)
             {
                 System.out.println(word);
             }
@@ -30,5 +32,8 @@ public class FileBrowserApplication
         {
             System.out.println("File not found.");
         }
+
+
+
     }
 }
