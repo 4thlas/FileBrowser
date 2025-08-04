@@ -15,7 +15,7 @@ import java.util.List;
 @Setter
 @Getter
 @ToString
-public class Word
+public class WordEntity
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,6 +31,6 @@ public class Word
             joinColumns = @JoinColumn(name = "word_id"),
             inverseJoinColumns = @JoinColumn(name = "file_id"))
     @Builder.Default
-    private List<File> files = new ArrayList<>();
+    private List<FileEntity> files = new ArrayList<>();
 
 }

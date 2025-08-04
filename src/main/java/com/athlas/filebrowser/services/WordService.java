@@ -19,7 +19,7 @@ public class WordService
     private FileService fileService;
 
     //private static final String PUNCTUATION_REGEX = "[~`!@#\\\\$%\\\\^&\\\\*\\\\(\\\\)-_=\\\\+\\\\[\\\\]\\\\{\\\\};:'\\\",\\\\.<>/\\\\?\\\\\\\\\\\\|]";
-    private static final String PUNCTUATION_REGEX = "[~!@#$%^&*()\\-_=+\\[\\]{};:'\",.<>/?\\\\|]";
+    //private static final String PUNCTUATION_REGEX = "[~!@#$%^&*()\\-_=+\\[\\]{};:'\",.<>/?\\\\|]";
 
 
     // Returns all words from folder
