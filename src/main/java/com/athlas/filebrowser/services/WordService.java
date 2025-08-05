@@ -1,42 +1,56 @@
 package com.athlas.filebrowser.services;
 
+import com.athlas.filebrowser.dto.WordDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.HashSet;
-import java.util.Scanner;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
 @Setter
 @Getter
+@Slf4j
 public class WordService
 {
     private FileService fileService;
 
-    //private static final String PUNCTUATION_REGEX = "[~`!@#\\\\$%\\\\^&\\\\*\\\\(\\\\)-_=\\\\+\\\\[\\\\]\\\\{\\\\};:'\\\",\\\\.<>/\\\\?\\\\\\\\\\\\|]";
-    //private static final String PUNCTUATION_REGEX = "[~!@#$%^&*()\\-_=+\\[\\]{};:'\",.<>/?\\\\|]";
-
-
     // Returns all words from folder
-    public HashSet<String> getAllWords(String folderPath) throws FileNotFoundException
+    public List<WordDTO> getFolderWords(String folderPath) throws FileNotFoundException
     {
         File[] folderContent = fileService.getFolderFiles(folderPath);
 
-        HashSet<String> words = new HashSet<>();
+        Map<String, WordDTO> wordMap = new HashMap<>();
 
         for(File file : folderContent)
         {
             HashSet<String> fileWords = getFileWords(file);
 
-            words.addAll(fileWords);
+            for (String word : fileWords)
+            {
+                WordDTO wordDTO = wordMap.get(word);
+
+                // If it's a new word, add it to the list
+                if (wordDTO == null)
+                {
+                    wordDTO = WordDTO.builder()
+                            .word(word)
+                            .filenames(new ArrayList<>())
+                            .build();
+                    wordMap.put(word, wordDTO);
+                }
+
+                wordDTO.getFilenames().add(file.getName()); // Update wordDTO list of filenames it occurs in
+            }
         }
 
-        return words;
+        log.info("Extracted {} words from {} files", wordMap.size(), folderContent.length);
+        return new ArrayList<>(wordMap.values());
     }
 
     // Returns all words that appear in the file
@@ -50,21 +64,27 @@ public class WordService
         while (scanner.hasNext())
         {
             String sanitizedWord = sanitizeWord(scanner.next());
-            if (!sanitizedWord.isBlank())
-            {
-                // Separate connected words
-                String[] separated = sanitizedWord.split("[_\\.,:\\+=/\\\\-]");
 
-                // Add to a word set
-                for (String part : separated)
+            // Skip blank words
+            if (sanitizedWord.isBlank())
+            {
+                continue;
+            }
+
+            // Separate connected words
+            String[] separated = sanitizedWord.split("[_\\.,:\\+=/\\\\-]");
+
+            // Add to a word set
+            for (String part : separated)
+            {
+                if (!part.isBlank())
                 {
-                    if (!part.isBlank())
-                    {
-                        words.add(part);
-                    }
+                    words.add(part);
                 }
             }
         }
+
+        log.info("Extracted {} words from file {}", words.size(), file.getName());
         return words;
     }
 

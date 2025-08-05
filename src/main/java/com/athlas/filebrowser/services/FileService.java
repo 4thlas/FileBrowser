@@ -169,6 +169,8 @@ public class FileService
                     if (!dbFileChecksum.equals(localFileChecksum))
                     {
                         log.info("File {} changed", dbFileOptional.get().getFilename());
+
+                        // Update checksum in DB
                         dbFileOptional.get().setChecksum(localFileChecksum);
                         fileRepository.save(dbFileOptional.get());
 
