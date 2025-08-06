@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
 
 @SpringBootApplication
@@ -23,11 +22,6 @@ public class FileBrowserApplication
 
         try
         {
-//            File file = fileService.openFile("hamis.txt");
-//
-//            HashSet<String> words = wordService.getFileWords(file);
-//
-//
             List<WordDTO> words = wordService.getFolderWords("files");
 
             for (WordDTO word : words)
@@ -43,6 +37,7 @@ public class FileBrowserApplication
         try
         {
             fileService.syncFilesDB();
+            wordService.syncWordsDB();
         }
         catch (IOException e)
         {

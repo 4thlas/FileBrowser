@@ -5,5 +5,7 @@ import org.springframework.data.repository.CrudRepository;
 
 import java.math.BigDecimal;
 
-public interface WordRepository extends CrudRepository<WordEntity, BigDecimal> {
+public interface WordRepository extends CrudRepository<WordEntity, BigDecimal>
+{
+    boolean existsByWord(String word);
 }

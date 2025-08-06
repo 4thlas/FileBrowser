@@ -1,6 +1,10 @@
 package com.athlas.filebrowser.services;
 
 import com.athlas.filebrowser.dto.WordDTO;
+import com.athlas.filebrowser.entities.FileEntity;
+import com.athlas.filebrowser.entities.WordEntity;
+import com.athlas.filebrowser.repositories.FileRepository;
+import com.athlas.filebrowser.repositories.WordRepository;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 
 @Service
@@ -18,6 +23,8 @@ import java.util.*;
 @Slf4j
 public class WordService
 {
+    private final WordRepository wordRepository;
+    private final FileRepository fileRepository;
     private FileService fileService;
 
     // Returns all words from folder
@@ -96,5 +103,47 @@ public class WordService
                 .replaceAll("^[\\p{Punct}\\p{IsPunctuation}…]+|[\\p{Punct}\\p{IsPunctuation}…]+$", "")
                 .toLowerCase();
 
+    }
+
+    public void syncWordsDB() throws IOException
+    {
+        // Word batch
+        List<WordEntity> newWords = new ArrayList<>();
+
+        try
+        {
+            List<WordDTO> localWords = getFolderWords("files");
+
+            for (WordDTO localWord : localWords)
+            {
+                // Skip if word exists in DB
+                if (wordRepository.existsByWord(localWord.getWord()))
+                {
+                    continue;
+                }
+
+                // Prepare a list of FileEntities that contain localWord
+                List<FileEntity> localWordFiles = new ArrayList<>();
+                for (String wordFilename : localWord.getFilenames())
+                {
+                    var dbWordFileOptional = fileRepository.findByFilename(wordFilename);
+                    dbWordFileOptional.ifPresent(localWordFiles::add);
+                }
+
+                // Add new word to a batch
+                newWords.add(WordEntity.builder()
+                        .word(localWord.getWord())
+                        .files(localWordFiles)
+                        .build());
+            }
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.getMessage());
+        }
+
+        // Save word batch
+        wordRepository.saveAll(newWords);
+        log.info("Saved {} new words to DB", newWords.size());
     }
 }
