@@ -1,8 +1,6 @@
 package com.athlas.filebrowser.services;
 
-import com.athlas.filebrowser.entities.FileEntity;
 import com.athlas.filebrowser.repositories.FileRepository;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -117,81 +114,6 @@ public class FileService
         }
 
         return builtChecksum.toString();
-    }
-
-    @Transactional
-    public void syncFilesDB() throws IOException
-    {
-        final File[] localFiles = getFolderFiles("files");
-
-        List<String> localFilenames = new ArrayList<>();
-
-        // Batch of new files
-        List<FileEntity> newFiles = new ArrayList<>();
-
-        for (File localFile : localFiles)
-        {
-            // Get file name and add it to a local filenames list
-            String localFileName = localFile.getName();
-            localFilenames.add(localFileName);
-
-            // Get file metadata
-            long fileSize = localFile.length();
-            Date lastModified = new Date(localFile.lastModified());
-
-            Optional<FileEntity> dbFileOptional = fileRepository.findByFilename(localFileName);
-
-            // Create a new file entity in DB if not found
-            if (dbFileOptional.isEmpty())
-            {
-                try
-                {
-                    newFiles.add(FileEntity.builder()
-                            .filename(localFileName)
-                            .size(BigDecimal.valueOf(fileSize))
-                            .lastModified(lastModified)
-                            .checksum(calcChecksum(localFile))
-                            .build());
-                }
-                catch (Exception e)
-                {
-                    throw new IOException(e.getMessage());
-                }
-            }
-            else
-            {
-                try
-                {
-                    String dbFileChecksum = dbFileOptional.get().getChecksum();
-                    String localFileChecksum = calcChecksum(localFile);
-
-                    // Check if a file was changed
-                    if (!dbFileChecksum.equals(localFileChecksum))
-                    {
-                        log.info("File {} changed", dbFileOptional.get().getFilename());
-
-                        // Update checksum in DB
-                        dbFileOptional.get().setChecksum(localFileChecksum);
-                        fileRepository.save(dbFileOptional.get());
-
-                        // TODO
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw new IOException(e.getMessage());
-                }
-            }
-        }
-
-        // Save file batch
-        fileRepository.saveAll(newFiles);
-        log.info("Saved {} new files to DB", newFiles.size());
-
-        // Get all DB file entities that don't exist locally and delete them
-        List<FileEntity> orphanedFiles = fileRepository.findByFilenameNotIn(localFilenames);
-        fileRepository.deleteAll(orphanedFiles);
-        log.info("Removed {} orphaned files from DB", orphanedFiles.size());
     }
 }
 

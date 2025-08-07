@@ -31,7 +31,6 @@ public class WordEntity
             joinColumns = @JoinColumn(name = "word_id"),
             inverseJoinColumns = @JoinColumn(name = "file_id"))
     @Builder.Default
-    @ToString.Exclude
     private List<FileEntity> files = new ArrayList<>();
 
 }

@@ -1,14 +1,12 @@
 package com.athlas.filebrowser;
 
-import com.athlas.filebrowser.dto.WordDTO;
-import com.athlas.filebrowser.services.FileService;
-import com.athlas.filebrowser.services.WordService;
+import com.athlas.filebrowser.services.DBService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Scanner;
 
 @SpringBootApplication
 public class FileBrowserApplication
@@ -17,27 +15,17 @@ public class FileBrowserApplication
     {
         ApplicationContext context = SpringApplication.run(FileBrowserApplication.class, args);
 
-        var fileService = context.getBean(FileService.class);
-        var wordService = context.getBean(WordService.class);
+        var dbService = context.getBean(DBService.class);
+
+        Scanner scanner = new Scanner(System.in);
 
         try
         {
-            List<WordDTO> words = wordService.getFolderWords("files");
-
-            for (WordDTO word : words)
+            while (true)
             {
-                System.out.println(word.getWord() + " " + word.getFilenames());
+                dbService.syncFilesDB();
+                scanner.nextLine();
             }
-        }
-        catch (Exception e)
-        {
-            System.out.println(e.getMessage());
-        }
-
-        try
-        {
-            fileService.syncFilesDB();
-            wordService.syncWordsDB();
         }
         catch (IOException e)
         {
