@@ -12,7 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 
 @Service
@@ -27,7 +28,7 @@ public class WordService
     private FileService fileService;
 
     // Returns all words from folder
-    public List<WordDTO> getFolderWords(String folderPath) throws FileNotFoundException
+    public List<WordDTO> getFolderWords(String folderPath) throws IOException
     {
         File[] folderContent = fileService.getFolderFiles(folderPath);
 
@@ -35,7 +36,7 @@ public class WordService
 
         for(File file : folderContent)
         {
-            HashSet<String> fileWords = getFileWords(file);
+            String[] fileWords = getFileWords(file);
 
             for (String word : fileWords)
             {
@@ -60,58 +61,52 @@ public class WordService
     }
 
     // Returns all words that appear in the file
-    public HashSet<String> getFileWords(File file) throws FileNotFoundException
+    public String[] getFileWords(File file) throws IOException
     {
-        HashSet<String> words = new HashSet<>();
+        String rawText;
 
-        Scanner scanner = new Scanner(file);
-        scanner.useDelimiter("\\s+"); // Delimiter to read word by word
+        rawText = Files.readString(file.toPath());
 
-        while (scanner.hasNext())
+        return getWordsArray(rawText, false);
+    }
+
+    public String[] getWordsArray(String rawText, boolean allowDuplicates)
+    {
+        List<String> readyWords = new ArrayList<>();
+
+        String[] rawWords;
+
+        // Split by whitespaces, new lines and some chars
+        rawWords = rawText.split("[\\s\\n_\\-\\+=\\\\/\\.,:]+");
+
+        // Make lowercase and remove all special chars outside each word
+        rawWords = Arrays.stream(rawWords)
+                .map(String::toLowerCase)
+                .map(word -> word.replaceAll("(^[^a-zA-Z0-9]+)|([^a-zA-Z0-9]+$)", ""))
+                .toArray(String[]::new);
+
+        for (String word : rawWords)
         {
-            String sanitizedWord = sanitizeWord(scanner.next());
-
-            // Skip blank words
-            if (sanitizedWord.isBlank())
+            if (word.isBlank()) // Skip every blank string
             {
                 continue;
             }
 
-            // Separate connected words
-            String[] separated = sanitizedWord.split("[_\\.,:\\+=/\\\\-]");
-
-            // Add to a word set
-            for (String part : separated)
+            // Add word to a readyWords list if allowDuplicates = true or remove duplicates otherwise
+            if (allowDuplicates)
             {
-                if (!part.isBlank())
+                readyWords.add(word);
+            }
+            else
+            {
+                boolean duplicateFound = Arrays.asList(readyWords.toArray()).contains(word);
+                if (!duplicateFound)
                 {
-                    words.add(part);
+                    readyWords.add(word);
                 }
             }
         }
 
-        log.info("Extracted {} words from file {}", words.size(), file.getName());
-        return words;
-    }
-
-    // Removes leading and ending punctuation marks
-    public String sanitizeWord(String word)
-    {
-        return word
-                .replaceAll("[\\p{Cf}]", "") // Remove invisible characters
-                .replaceAll("^[\\p{Punct}\\p{IsPunctuation}…]+|[\\p{Punct}\\p{IsPunctuation}…]+$", "")
-                .toLowerCase();
-    }
-
-    public ArrayList<String> getWordOccurrences(WordEntity word)
-    {
-        ArrayList<String> fileList = new ArrayList<>();
-
-        for (FileEntity file : word.getFiles())
-        {
-            fileList.add(file.getFilename());
-        }
-
-        return fileList;
+        return readyWords.toArray(new String[0]);
     }
 }

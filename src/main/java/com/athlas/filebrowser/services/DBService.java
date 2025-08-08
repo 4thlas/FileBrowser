@@ -42,7 +42,7 @@ public class DBService
         List<String> localFilenames = new ArrayList<>();
 
         // Batch of new files
-        List<FileEntity> newFiles = new ArrayList<>();
+        List<FileEntity> filesToSync = new ArrayList<>();
 
         for (File localFile : localFiles)
         {
@@ -61,7 +61,7 @@ public class DBService
             {
                 try
                 {
-                    newFiles.add(FileEntity.builder()
+                    filesToSync.add(FileEntity.builder()
                             .filename(localFileName)
                             .size(BigDecimal.valueOf(fileSize))
                             .lastModified(lastModified)
@@ -87,9 +87,8 @@ public class DBService
 
                         // Update checksum in DB
                         dbFileOptional.get().setChecksum(localFileChecksum);
-                        fileRepository.save(dbFileOptional.get());
 
-                        syncWordsDB();
+                        filesToSync.add(dbFileOptional.get());
                     }
                 }
                 catch (Exception e)
@@ -100,14 +99,11 @@ public class DBService
         }
 
         // Save file batch if it has any files
-        if (!newFiles.isEmpty())
+        if (!filesToSync.isEmpty())
         {
-            fileRepository.saveAll(newFiles);
-            log.info("Saved {} new files to DB", newFiles.size());
-
-            syncWordsDB();
+            fileRepository.saveAll(filesToSync);
+            log.info("Saved {} new files to DB", filesToSync.size());
         }
-
 
         // Get all DB file entities that don't exist locally and delete them
         List<FileEntity> orphanedFiles = fileRepository.findByFilenameNotIn(localFilenames);
@@ -116,14 +112,27 @@ public class DBService
             fileRepository.deleteAll(orphanedFiles);
             log.info("Removed {} orphaned files from DB", orphanedFiles.size());
 
-            syncWordsDB();
+            filesToSync.addAll(orphanedFiles);
         }
+
+        String[] fileNamesToSync = filesToSync.stream()
+                .map(FileEntity::getFilename)
+                .toArray(String[]::new);
+
+        syncWordsDB(fileNamesToSync);
     }
 
-    public void syncWordsDB() throws IOException
+    public void syncWordsDB(String[] fileNamesToSync) throws IOException
     {
+        if (fileNamesToSync.length == 0)
+        {
+            return;
+        }
+
+        log.info("Synchronizing words...");
+
         // Word batch
-        List<WordEntity> newWords = new ArrayList<>();
+        List<WordEntity> wordsToSyncBatch = new ArrayList<>();
 
         List<String> localWordsStrings = new ArrayList<>();
 
@@ -134,6 +143,16 @@ public class DBService
             for (WordDTO localWord : localWords)
             {
                 localWordsStrings.add(localWord.getWord());
+
+                // If word doesn't belong to any modified file, skip iteration
+                boolean wordFileChanged = localWord.getFilenames()
+                        .stream()
+                        .anyMatch(filename -> List.of(fileNamesToSync).contains(filename));
+
+                if (!wordFileChanged)
+                {
+                    continue;
+                }
 
                 // Prepare a list of FileEntities that contain localWord
                 List<FileEntity> localWordFiles = new ArrayList<>();
@@ -154,13 +173,14 @@ public class DBService
                     if (!dbWordFiles.equals(localWordFiles))
                     {
                         dbExistingWord.setFiles(localWordFiles);
+                        wordsToSyncBatch.add(dbExistingWord);
                     }
 
                     continue;
                 }
 
                 // Add new word to a batch
-                newWords.add(WordEntity.builder()
+                wordsToSyncBatch.add(WordEntity.builder()
                         .word(localWord.getWord())
                         .files(localWordFiles)
                         .build());
@@ -172,13 +192,20 @@ public class DBService
         }
 
         // Save word batch
-        wordRepository.saveAll(newWords);
-        log.info("Saved {} new words to DB in total", newWords.size());
+        wordRepository.saveAll(wordsToSyncBatch);
+        if (!wordsToSyncBatch.isEmpty())
+        {
+            log.info("Synchronized {} words with DB in total", wordsToSyncBatch.size());
+        }
+
 
         // Delete all words from DB that don't exist locally
         var orphanedWords = wordRepository.findAllByWordNotIn(localWordsStrings);
         wordRepository.deleteAll(orphanedWords);
 
-        log.info("Removed {} orphaned words from DB", orphanedWords.size());
+        if (!orphanedWords.isEmpty())
+        {
+            log.info("Removed {} orphaned words from DB", orphanedWords.size());
+        }
     }
 }

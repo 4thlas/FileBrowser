@@ -8,3 +8,4 @@ spring:
 app:
   files:
     location: files/
+  search_engine: reverse_index

@@ -22,7 +22,7 @@ public class WordEntity
     @Column(name = "id")
     private BigDecimal id;
 
-    @Column(name = "word")
+    @Column(name = "word", unique = true)
     private String word;
 
     @ManyToMany

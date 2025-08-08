@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -14,5 +15,5 @@ import java.util.List;
 public class WordDTO
 {
     private String word;
-    private List<String> filenames;
+    private ArrayList<String> filenames;
 }
